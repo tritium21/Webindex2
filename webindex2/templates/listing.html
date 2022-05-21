@@ -1,0 +1,34 @@
+﻿{% extends "layout.html" %}
+{% from 'macros.html' import icon, download_url, size, fetch_icon with context %}
+{% block title%}Directory Listing: {{ cwd }}{% endblock %}
+{% block content %}
+<ol class="breadcrumb">
+    {% for name, path in crumbs %}
+    <li class="breadcrumb-item {% if loop.last %}active{% endif %}"><a href="{{ url_for('index', path=path) }}">{% if name %}{{ name }}{% else %}{{ icon("home") }}{% endif %}</a></li>
+    {% endfor %}
+</ol>
+<table class="table table-striped table-hover table-responsive">
+    <thead>
+        <tr>
+            <th class="col-sm-9">Name</th>
+            <th class="col-sm-1">Size</th>
+            <th class="col-sm-1">Modified</th>
+            <th class="col-sm-1">Download</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for path in paths %}
+        <tr>
+            <td><a href="{{ url_for('index', path=path.path) }}">{{ icon(path.mimetype) }} {{ path.name }}</a></td>
+            <td>{{ size(path) }}</td>
+            <td>{{ path.modified|humanize('naturaldate') }}</td>
+            <td><a href="{{ download_url(path) }}">{{ fetch_icon(path) }}</a></td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="4"><em>Directory Empty.</em></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{%- endblock %}

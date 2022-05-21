@@ -1,0 +1,22 @@
+﻿{%- macro icon(name) -%}
+{% set _map = {
+    "home": "we-home",
+    "directory": "we-folder-open",
+    "zip": "we-folder-download",
+    "download": "we-download",
+    "text": "we-file-text2",
+    "image": "we-file-picture",
+    "audio": "we-file-music",
+    "video": "we-file-video",
+    "application": "we-file-empty",
+    "pdf": "we-file-pdf",
+} %}
+<span class="{{ _map.get(name, "we-file-empty") }}"></span>
+{%- endmacro -%}
+
+{%- macro download_url(path) -%}
+{% set view = 'get_zip' if path.is_dir else 'index' %}
+{{ url_for(view, path=path.path.lstrip('/')) }}
+{%- endmacro -%}
+{% macro size(path) %}{% if path.is_dir %}--{% else %}{{ path.size|humanize('naturalsize') }}{% endif %}{% endmacro %}
+{% macro fetch_icon(path) %}{% if path.is_dir %}{{ icon("zip") }}{% else %}{{ icon("download") }}{% endif %}{% endmacro %}
