@@ -20,6 +20,10 @@ class MappedPath:
         return AsyncPurePosixPath('/', self._mount.mount) / self._path.relative_to(self._mount.root)
 
     @property
+    def x_accel_redirect_url(self):
+        return AsyncPurePosixPath('/', self._mount.accel) / self._path.relative_to(self._mount.root)
+
+    @property
     def name(self):
         return self._path.name
 
