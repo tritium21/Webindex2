@@ -1,31 +1,54 @@
+import datetime
 from dataclasses import dataclass
 from pathlib import Path # bug in aiopath requires we use pathlib as a workaround
 
 from aiopath import AsyncPath, AsyncPurePosixPath
 
+from .mime import guess_type
+
+class Home:
+    def __init__(self):
+        self.name = ''
+        self.url = ''
+        self.is_dir = True
+
 class MappedPath:
-    def __init__(self, mount, path=None):
+    def __init__(self, mount, path=None, name=None):
         self._mount = mount
         self._path = mount.root if path is None else AsyncPath(path)
+        self._name = self._path.name if name is None else name
 
-    def with_path(self, path):
-        return MappedPath(self._mount, path)
+    def with_path(self, path=None):
+        name = None
+        if path is None:
+            name = self._mount.mount
+        return MappedPath(self._mount, path, name)
 
     @property
     def os_path(self):
         return self._path
 
     @property
+    def crumbs(self):
+        parents = [self.with_path(p) for p in self._path.parents]
+        result = [r for r in parents if r.is_relative_to(self._mount.root)][:-1] + [self.with_path(), Home()]
+        if self._path != self._mount.root:
+            result = [self] + result
+        crumbs = list(reversed(result))
+        print([(p.name, p) for p in crumbs])
+        return crumbs
+
+    @property
     def url(self):
-        return AsyncPurePosixPath('/', self._mount.mount) / self._path.relative_to(self._mount.root)
+        return str(AsyncPurePosixPath(self._mount.mount) / self._path.relative_to(self._mount.root))
 
     @property
     def x_accel_redirect_url(self):
-        return AsyncPurePosixPath('/', self._mount.accel) / self._path.relative_to(self._mount.root)
+        return AsyncPurePosixPath(self._mount.accel) / self._path.relative_to(self._mount.root)
 
     @property
     def name(self):
-        return self._path.name
+        return self._name
 
     def relative_to(self, other):
         return self._path.relative_to(other)
@@ -42,6 +65,9 @@ class MappedPath:
     async def exists(self):
         return await self._path.exists()
 
+    async def stat(self):
+        return await self._path.stat()
+
     async def iterdir(self):
         async for item in self._path.iterdir():
             yield self.with_path(item)
@@ -57,7 +83,7 @@ class Filesystem:
 
     async def iterdir(self):
         for mount in self.mounts:
-            yield MappedPath(*mount)
+            yield MappedPath(mount, name=mount.mount)
     
     async def is_dir(self):
         return True
@@ -70,10 +96,14 @@ class Filesystem:
 
     @property
     def url(self):
-        return AsyncPurePosixPath('/')
+        return ''
+
+    @property
+    def crumbs(self):
+        return [Home()]
 
     def navigate(self, path):
-        parts = AsyncPurePosixPath(path).parts[1:]
+        parts = AsyncPurePosixPath(path.strip('/')).parts
         if not parts:
             return self
         mount_name, *segments = parts
@@ -102,22 +132,29 @@ class Mount:
         self.root = AsyncPath(Path(self.root).resolve())
 
 
-if __name__ == '__main__':
-    from asyncio import run
-    fs = Filesystem([Mount('books', r"x:\finished", 'books_protected')])
-    async def navigate(path):
-        leaf = fs.navigate(path)
-        if not (await leaf.exists()):
-            raise FileNotFoundError(f"Path does not exist: {leaf}")
-        if (await leaf.is_dir()):
-            return [
-                (node, node.url)
-                async for node in leaf.iterdir()
-            ]
+@dataclass
+class Item:
+    name: str
+    is_dir: bool
+    size: int
+    modified: datetime.datetime
+    url: str
+    mimetype: str
+    mimeclass: str
 
-        return [(leaf, leaf.url)]
-
-    async def main():
-        for line in await navigate('/books/[C] Non-Fiction'):
-            print(line)
-    run(main())
+    @classmethod
+    async def from_path(cls, path):
+        name = path.name
+        is_dir = await path.is_dir()
+        stat = (await path.stat())
+        size = stat.st_size
+        modified = datetime.datetime.fromtimestamp(stat.st_mtime)
+        url = path.url
+        if not is_dir:
+            mimetype = guess_type(name)[0]
+            mimetype = mimetype if mimetype is not None else 'application/octet-stream'
+            mimeclass = mimetype.split('/')[0]
+        else:
+            mimetype = ''
+            mimeclass = 'directory'
+        return cls(name, is_dir, size, modified, url, mimetype, mimeclass)
