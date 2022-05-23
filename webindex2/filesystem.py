@@ -35,7 +35,6 @@ class MappedPath:
         if self._path != self._mount.root:
             result = [self] + result
         crumbs = list(reversed(result))
-        print([(p.name, p) for p in crumbs])
         return crumbs
 
     @property

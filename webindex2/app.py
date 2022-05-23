@@ -1,9 +1,12 @@
 from pathlib import Path
+import asyncio
 
 from aiohttp import web
 import aiohttp_jinja2
 import jinja2
 import natsort
+from zipstream import AioZipStream
+from async_timeout import timeout
 
 from .filesystem import Filesystem, Mount, Item
 from .utils import partition
@@ -39,10 +42,40 @@ async def index(request):
 
 
 @routes.get('/download/{path:.+}', name='download')
-@routes.get('/download-zip/{path:.+}', name='download-zip')
 async def download(request):
     return web.Response(text=f"You tried to download: '{request.match_info.get('path', '')}'")
 
+@routes.get('/download-zip/{path:.+}', name='download-zip')
+async def download_zip(request):
+    try:
+        plo = request.app['fs'].navigate(request.match_info.get('path', ''))
+    except FileNotFoundError:
+        raise web.HTTPNotFound
+    if not plo.is_dir:
+        raise web.HTTPForbidden
+    osp = plo.os_path
+    try:
+        async with timeout(10):
+            paths = osp.rglob('*')
+    except asyncio.TimeoutError as e:
+        raise web.HTTPInternalServerError from e
+    files = [
+        {'file': str(p), 'name': str(p.relative_to(osp))}
+        async for p in paths
+        if await p.is_file()
+    ]
+
+    aiozip = AioZipStream(files, chunksize=32768)
+    response = web.StreamResponse(
+        status=200,
+        reason='OK',
+        headers={'Content-Type': 'application/zip'},
+    )
+    await response.prepare(request)
+    async for chunk in aiozip.stream():
+        await response.write(chunk)
+    await response.write_eof()
+    return response
 
 
 def init(argv=None):

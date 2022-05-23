@@ -10,18 +10,10 @@
     "video": "we-file-video",
     "application": "we-file-empty",
     "pdf": "we-file-pdf",
-} %}
-<span class="{{ _map.get(name, "we-file-empty") }}"></span>
-{%- endmacro -%}
+} %}<span class="{{ _map.get(name, "we-file-empty") }}"></span>{%- endmacro -%}
 
-{%- macro navigate(path) -%}
-{% set view = 'listing' if path.is_dir else 'download' %}
-{{ url(view, path=path.url) }}
-{%- endmacro -%}
-{%- macro download(path) -%}
-{% set view = 'download-zip' if path.is_dir else 'download' %}
-{{ url(view, path=path.url) }}
-{%- endmacro -%}
+{%- macro navigate(path) -%}{% set view = 'listing' if path.is_dir else 'download' %}{{ url(view, path=path.url) }}{%- endmacro -%}
+{%- macro download(path) -%}{% set view = 'download-zip' if path.is_dir else 'download' %}{{ url(view, path=path.url) }}{%- endmacro -%}
 
 {% macro size(path) %}{% if path.is_dir %}--{% else %}{{ path.size|humanize_naturalsize() }}{% endif %}{% endmacro %}
 {% macro fetch_icon(path) %}{% if path.is_dir %}{{ icon("zip") }}{% else %}{{ icon("download") }}{% endif %}{% endmacro %}
