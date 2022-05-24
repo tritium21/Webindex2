@@ -12,8 +12,21 @@ from .filesystem import Filesystem, Mount, Item
 from .utils import partition
 
 
+class PrefixingTable(web.RouteTableDef):
+    def __init__(self, prefix='/webindex'):
+        self._prefix = prefix
+        super().__init__()
 
-routes = web.RouteTableDef()
+    def route(self, method, path, **kwargs):
+        path = self._prefix + path
+        return super().route(method, path, **kwargs)
+
+    def static(self, prefix, path, **kwargs):
+        prefix = self._prefix + prefix
+        return super().static(prefix, path, **kwargs)
+
+
+routes = PrefixingTable()
 routes.static('/static', (Path(__file__).resolve().parent / 'static'), name='static')
 
 
@@ -43,15 +56,25 @@ async def index(request):
 
 @routes.get('/download/{path:.+}', name='download')
 async def download(request):
-    return web.Response(text=f"You tried to download: '{request.match_info.get('path', '')}'")
+    try:
+        plo = request.app['fs'].navigate(request.match_info.get('path', ''))
+    except FileNotFoundError:
+        raise web.HTTPNotFound
+    if await plo.is_dir():
+        raise web.HTTPForbidden
+    plo_item = await Item.from_path(plo)
+    resp =  web.Response(content_type=plo_item.mimetype)
+    resp.headers['X-Accel-Redirect'] = str(plo.x_accel_redirect_url)
+    resp.headers['Content-Disposition'] = f'attachment; filename="{plo.name}"'
+    return resp
 
-@routes.get('/download-zip/{path:.+}', name='download-zip')
+@routes.get('/download-zip/{path:.+}.zip', name='download-zip')
 async def download_zip(request):
     try:
         plo = request.app['fs'].navigate(request.match_info.get('path', ''))
     except FileNotFoundError:
         raise web.HTTPNotFound
-    if not plo.is_dir:
+    if not await plo.is_dir():
         raise web.HTTPForbidden
     osp = plo.os_path
     try:
