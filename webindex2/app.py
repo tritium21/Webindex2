@@ -5,12 +5,11 @@ from aiohttp import web
 import aiohttp_jinja2
 import jinja2
 import natsort
-from zipstream import AioZipStream
 from async_timeout import timeout
 
 from .filesystem import Filesystem, Mount, Item
 from .utils import partition
-
+from .zipstream import zipstream
 
 class PrefixingTable(web.RouteTableDef):
     def __init__(self, prefix='/webindex'):
@@ -68,6 +67,7 @@ async def download(request):
     resp.headers['Content-Disposition'] = f'attachment; filename="{plo.name}"'
     return resp
 
+
 @routes.get('/download-zip/{path:.+}.zip', name='download-zip')
 async def download_zip(request):
     try:
@@ -83,19 +83,18 @@ async def download_zip(request):
     except asyncio.TimeoutError as e:
         raise web.HTTPInternalServerError from e
     files = [
-        {'file': str(p), 'name': str(p.relative_to(osp))}
+        (p, str(p.relative_to(osp)))
         async for p in paths
-        if await p.is_file()
     ]
 
-    aiozip = AioZipStream(files, chunksize=32768)
+    zstream = zipstream(files)
     response = web.StreamResponse(
         status=200,
         reason='OK',
         headers={'Content-Type': 'application/zip'},
     )
     await response.prepare(request)
-    async for chunk in aiozip.stream():
+    async for chunk in zstream:
         await response.write(chunk)
     await response.write_eof()
     return response
