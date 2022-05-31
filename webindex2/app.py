@@ -1,14 +1,13 @@
+from asyncio import TimeoutError
 from pathlib import Path
-import asyncio
-from sys import prefix
 
 from aiohttp import web
-import aiohttp_jinja2
-import jinja2
-import natsort
+from aiohttp_jinja2 import setup as jinja2_setup, template
 from async_timeout import timeout
+from jinja2 import PackageLoader, pass_context
+from natsort import os_sorted
 
-from .filesystem import Filesystem, Mount, Item
+from .filesystem import Filesystem, Item, Mount
 from .utils import partition, read_file
 from .zipstream import zipstream
 
@@ -26,7 +25,7 @@ async def root(request):
 
 @routes.get('/listing/{path:.+}', name="listing")
 @routes.get('/listing/', name='index')
-@aiohttp_jinja2.template('listing.html')
+@template('listing.html')
 async def index(request):
     try:
         plo = request.app['fs'].navigate(request.match_info.get('path', ''))
@@ -34,8 +33,8 @@ async def index(request):
         raise web.HTTPNotFound
     paths = [(await Item.from_path(x)) async for x in plo.iterdir()]
     dirs, files = partition(paths, lambda p: p.is_dir)
-    dirs = natsort.os_sorted(dirs, key=lambda x: x.name)
-    files = natsort.os_sorted(files, key=lambda x: x.name)
+    dirs = os_sorted(dirs, key=lambda x: x.name)
+    files = os_sorted(files, key=lambda x: x.name)
     crumbs = plo.crumbs
     return {'paths': dirs+files, 'cwd': plo.url, 'crumbs': crumbs}
 
@@ -75,13 +74,12 @@ async def download_zip(request):
     try:
         async with timeout(10):
             paths = osp.rglob('*')
-    except asyncio.TimeoutError as e:
+    except TimeoutError as e:
         raise web.HTTPInternalServerError from e
     files = [
         (p, str(p.relative_to(osp)))
         async for p in paths
     ]
-
     zstream = zipstream(files)
     response = web.StreamResponse()
     response.headers['Content-Type'] = 'application/zip'
@@ -93,14 +91,15 @@ async def download_zip(request):
     return response
 
 
-def url_rewriter(prefix=None):
-    url_for = aiohttp_jinja2.GLOBAL_HELPERS['url']
+def url_rewriter(env, prefix=None):
+    url_for = env.globals['url']
     if prefix is None:
         return url_for
-    @jinja2.pass_context
+    @pass_context
     def _url_for(*args, **kwargs):
         url = url_for(*args, **kwargs)
         return url.with_path(f'{prefix}{url.path}')
+    env.globals['url'] = _url_for
     return _url_for
 
 def route_rewriter(routes, prefix=None):
@@ -125,12 +124,12 @@ def route_rewriter(routes, prefix=None):
 
 def init(argv=None):
     app = web.Application()
-    env = aiohttp_jinja2.setup(
+    env = jinja2_setup(
         app,
-        loader=jinja2.PackageLoader('webindex2'),
+        loader=PackageLoader('webindex2'),
         extensions=["jinja2_humanize_extension.HumanizeExtension"],
     )
-    env.globals['url'] = url_rewriter(prefix=None)
+    url_rewriter(env, prefix=None)
     # fs = Filesystem([
     #     Mount('books', r"x:\finished", '/books_protected'),
     # ])

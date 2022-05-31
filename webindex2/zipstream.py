@@ -1,13 +1,12 @@
-import time
-import io
-
-from zipfile import ZipInfo, ZipFile
+from io import RawIOBase
+from time import localtime
+from zipfile import ZipFile, ZipInfo
 
 from aiopath import AsyncPath
 
 from .utils import read_file
 
-class Stream(io.RawIOBase):
+class Stream(RawIOBase):
     """An unseekable stream for the ZipFile to write to"""
 
     def __init__(self):
@@ -34,7 +33,7 @@ class AioZipInfo(ZipInfo):
         filename = AsyncPath(filename)
         st = await filename.stat()
         isdir = await filename.is_dir()
-        mtime = time.localtime(st.st_mtime)
+        mtime = localtime(st.st_mtime)
         date_time = mtime[0:6]
         if not strict_timestamps and date_time[0] < 1980:
             date_time = (1980, 1, 1, 0, 0, 0)
