@@ -5,6 +5,8 @@ from zipfile import ZipInfo, ZipFile
 
 from aiopath import AsyncPath
 
+from .utils import read_file
+
 class Stream(io.RawIOBase):
     """An unseekable stream for the ZipFile to write to"""
 
@@ -50,14 +52,6 @@ class AioZipInfo(ZipInfo):
         else:
             zinfo.file_size = st.st_size
         return zinfo
-
-async def read_file(path):
-    async with path.open('rb') as fp:
-        while True:
-            buf = await fp.read(1024 * 64)
-            if not buf:
-                break
-            yield buf
 
 async def zipstream(files):
     files = [

@@ -1,5 +1,6 @@
 from pathlib import Path
 import asyncio
+from sys import prefix
 
 from aiohttp import web
 import aiohttp_jinja2
@@ -8,24 +9,10 @@ import natsort
 from async_timeout import timeout
 
 from .filesystem import Filesystem, Mount, Item
-from .utils import partition
+from .utils import partition, read_file
 from .zipstream import zipstream
 
-class PrefixingTable(web.RouteTableDef):
-    def __init__(self, prefix='/webindex'):
-        self._prefix = prefix
-        super().__init__()
-
-    def route(self, method, path, **kwargs):
-        path = self._prefix + path
-        return super().route(method, path, **kwargs)
-
-    def static(self, prefix, path, **kwargs):
-        prefix = self._prefix + prefix
-        return super().static(prefix, path, **kwargs)
-
-
-routes = PrefixingTable()
+routes = web.RouteTableDef()
 routes.static('/static', (Path(__file__).resolve().parent / 'static'), name='static')
 
 
@@ -62,10 +49,18 @@ async def download(request):
     if await plo.is_dir():
         raise web.HTTPForbidden
     plo_item = await Item.from_path(plo)
-    resp =  web.Response(content_type=plo_item.mimetype)
-    resp.headers['X-Accel-Redirect'] = str(plo.x_accel_redirect_url)
-    resp.headers['Content-Disposition'] = f'attachment; filename="{plo.name}"'
-    return resp
+    accelflag = plo.x_accel_redirect_url is not None
+    response = web.StreamResponse()
+    response.headers['Content-Type'] = plo_item.mimetype
+    response.headers['Content-Disposition'] = f'attachment; filename="{plo.name}"'
+    if accelflag:
+        response.headers['X-Accel-Redirect'] = str(plo.x_accel_redirect_url)
+    await response.prepare(request)
+    if not accelflag:
+        async for chunk in read_file(plo.os_path):
+            await response.write(chunk)
+    await response.write_eof()
+    return response
 
 
 @routes.get('/download-zip/{path:.+}.zip', name='download-zip')
@@ -88,17 +83,45 @@ async def download_zip(request):
     ]
 
     zstream = zipstream(files)
-    response = web.StreamResponse(
-        status=200,
-        reason='OK',
-        headers={'Content-Type': 'application/zip'},
-    )
+    response = web.StreamResponse()
+    response.headers['Content-Type'] = 'application/zip'
+    response.headers['Content-Disposition'] = f'attachment; filename="{plo.name}.zip"'
     await response.prepare(request)
     async for chunk in zstream:
         await response.write(chunk)
     await response.write_eof()
     return response
 
+
+def url_rewriter(prefix=None):
+    url_for = aiohttp_jinja2.GLOBAL_HELPERS['url']
+    if prefix is None:
+        return url_for
+    @jinja2.pass_context
+    def _url_for(*args, **kwargs):
+        url = url_for(*args, **kwargs)
+        return url.with_path(f'{prefix}{url.path}')
+    return _url_for
+
+def route_rewriter(routes, prefix=None):
+    if prefix is None:
+        return routes
+    newroutes = []
+    for item in routes:
+        if isinstance(item, web.RouteDef):
+            newroutes.append(web.RouteDef(
+                method=item.method,
+                path=f'{prefix}{item.path}',
+                handler=item.handler,
+                kwargs=item.kwargs
+            ))
+        elif isinstance(item, web.StaticDef):
+            newroutes.append(web.StaticDef(
+                prefix=f'{prefix}{item.prefix}',
+                path=item.path,
+                kwargs=item.kwargs,
+            ))
+    return newroutes
 
 def init(argv=None):
     app = web.Application()
@@ -107,11 +130,15 @@ def init(argv=None):
         loader=jinja2.PackageLoader('webindex2'),
         extensions=["jinja2_humanize_extension.HumanizeExtension"],
     )
+    env.globals['url'] = url_rewriter(prefix=None)
+    # fs = Filesystem([
+    #     Mount('books', r"x:\finished", '/books_protected'),
+    # ])
     fs = Filesystem([
-        Mount('books', r"x:\finished", '/books_protected'),
+        Mount('books', r"x:\finished", None),
     ])
     app['fs'] = fs
-    app.add_routes(routes)
+    app.add_routes(route_rewriter(routes, prefix='/webindex'))
     return app
 
 if __name__ == '__main__':

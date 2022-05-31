@@ -8,3 +8,11 @@ def partition(iterable, predicate):
         iterable,
         ([], [])
     )
+
+async def read_file(path):
+    async with path.open('rb') as fp:
+        while True:
+            buf = await fp.read(1024 * 64)
+            if not buf:
+                break
+            yield buf

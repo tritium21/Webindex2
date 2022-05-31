@@ -6,6 +6,9 @@ from aiopath import AsyncPath, AsyncPurePosixPath
 
 from .mime import guess_type
 
+# This module is a mess, and i need to rebuild it from scratch.
+
+
 class Home:
     def __init__(self):
         self.name = ''
@@ -43,6 +46,8 @@ class MappedPath:
 
     @property
     def x_accel_redirect_url(self):
+        if self._mount.accel is None:
+            return
         return AsyncPurePosixPath(self._mount.accel) / self._path.relative_to(self._mount.root)
 
     @property
