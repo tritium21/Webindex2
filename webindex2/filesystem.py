@@ -1,10 +1,11 @@
 from dataclasses import dataclass
 from datetime import datetime
-from mimetypes import guess_type
 from pathlib import Path as PLPath
 
 from aiopath import AsyncPath, AsyncPurePosixPath
 from async_property import async_property
+
+from .mime import guess_type
 
 @dataclass
 class Mount:
