@@ -37,19 +37,18 @@ def route_rewriter(routes, prefix=None):
             ))
     return newroutes
 
-def init(argv=None):
+def init(config):
     app = web.Application()
+    app['config'] = config
     env = jinja2_setup(
         app,
         loader=PackageLoader('webindex2'),
         extensions=["jinja2_humanize_extension.HumanizeExtension"],
     )
-    url_rewriter(env, prefix=None)
-    fs = Filesystem.from_spec(r'books|x:\finished|/books_protected')
-    # fs = Filesystem.from_spec(r'books|x:\finished')
+    url_rewriter(env, prefix=config.url_prefix)
+    fs = Filesystem(config.mounts)
     app['fs'] = fs
-    app.add_routes(route_rewriter(routes, prefix='/webindex'))
-    #  app.add_routes(routes)
+    app.add_routes(route_rewriter(routes, prefix=config.route_prefix))
     return app
 
 if __name__ == '__main__':

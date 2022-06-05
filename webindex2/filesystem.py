@@ -5,16 +5,8 @@ from pathlib import Path as PLPath
 from aiopath import AsyncPath, AsyncPurePosixPath
 from async_property import async_property
 
+from .config import Mount
 from .mime import guess_type
-
-@dataclass
-class Mount:
-    mount: str
-    root: AsyncPath
-    accel: str = ''
-
-    def __post_init__(self):
-        self.root = AsyncPath(PLPath(self.root).resolve())
 
 
 @dataclass
@@ -152,13 +144,20 @@ class Filesystem:
         return [Path.home()]
 
     def __init__(self, mounts=None):
-        self.mounts = [] if mounts is None else mounts
+        self.mounts = []
+        if mounts is None:
+            return
+        for mount in mounts:
+            if isinstance(mount, Mount):
+                self.add_mount(mount.mount, mount.root, mount.accel)
 
     async def iterdir(self):
         for mount in self.mounts:
             yield Path.from_mount(mount)
 
-    def add_mount(self, mount, root, accel):
+    def add_mount(self, mount, root, accel=None):
+        root = AsyncPath(PLPath(root).resolve())
+        accel = accel if accel is not None else ''
         self.mounts.append(Mount(mount, root, accel))
 
     @classmethod
@@ -178,6 +177,8 @@ class Filesystem:
                 break
         else:
             raise FileNotFoundError()
+        if not segments:
+            return Path.from_mount(mount)
         path = mount.root.joinpath(*segments)
         # https://github.com/alexdelorenzo/aiopath/issues/4
         # in the future, assuming the bug is squashed, wont have to round trip through
