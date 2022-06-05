@@ -7,7 +7,7 @@ from async_timeout import timeout
 from jinja2 import PackageLoader, pass_context
 from natsort import os_sorted
 
-from .filesystem import Filesystem, Item, Mount
+from .filesystem import Filesystem
 from .utils import partition, read_file
 from .zipstream import zipstream
 
@@ -28,29 +28,28 @@ async def root(request):
 @template('listing.html')
 async def index(request):
     try:
-        plo = request.app['fs'].navigate(request.match_info.get('path', ''))
+        plo = await request.app['fs'].navigate(request.match_info.get('path', ''))
     except FileNotFoundError:
         raise web.HTTPNotFound
-    paths = [(await Item.from_path(x)) async for x in plo.iterdir()]
+    paths = [x async for x in plo.iterdir()]
     dirs, files = partition(paths, lambda p: p.is_dir)
     dirs = os_sorted(dirs, key=lambda x: x.name)
     files = os_sorted(files, key=lambda x: x.name)
-    crumbs = plo.crumbs
+    crumbs = await plo.crumbs
     return {'paths': dirs+files, 'cwd': plo.url, 'crumbs': crumbs}
 
 
 @routes.get('/download/{path:.+}', name='download')
 async def download(request):
     try:
-        plo = request.app['fs'].navigate(request.match_info.get('path', ''))
+        plo = await request.app['fs'].navigate(request.match_info.get('path', ''))
     except FileNotFoundError:
         raise web.HTTPNotFound
-    if await plo.is_dir():
+    if plo.is_dir:
         raise web.HTTPForbidden
-    plo_item = await Item.from_path(plo)
-    accelflag = plo.x_accel_redirect_url is not None
+    accelflag = plo.x_accel_redirect_url != ''
     response = web.StreamResponse()
-    response.headers['Content-Type'] = plo_item.mimetype
+    response.headers['Content-Type'] = plo.mimetype
     response.headers['Content-Disposition'] = f'attachment; filename="{plo.name}"'
     if accelflag:
         response.headers['X-Accel-Redirect'] = str(plo.x_accel_redirect_url)
@@ -65,10 +64,10 @@ async def download(request):
 @routes.get('/download-zip/{path:.+}.zip', name='download-zip')
 async def download_zip(request):
     try:
-        plo = request.app['fs'].navigate(request.match_info.get('path', ''))
+        plo = await request.app['fs'].navigate(request.match_info.get('path', ''))
     except FileNotFoundError:
         raise web.HTTPNotFound
-    if not await plo.is_dir():
+    if not plo.is_dir:
         raise web.HTTPForbidden
     osp = plo.os_path
     try:
@@ -130,14 +129,11 @@ def init(argv=None):
         extensions=["jinja2_humanize_extension.HumanizeExtension"],
     )
     url_rewriter(env, prefix=None)
-    # fs = Filesystem([
-    #     Mount('books', r"x:\finished", '/books_protected'),
-    # ])
-    fs = Filesystem([
-        Mount('books', r"x:\finished", None),
-    ])
+    fs = Filesystem.from_spec(r'books|x:\finished|/books_protected')
+    # fs = Filesystem.from_spec(r'books|x:\finished')
     app['fs'] = fs
     app.add_routes(route_rewriter(routes, prefix='/webindex'))
+    #  app.add_routes(routes)
     return app
 
 if __name__ == '__main__':
