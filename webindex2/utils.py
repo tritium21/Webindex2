@@ -1,5 +1,6 @@
 from functools import reduce
 
+
 def partition(iterable, predicate):
     """I have no idea how this works, but it does
     """
@@ -8,6 +9,7 @@ def partition(iterable, predicate):
         iterable,
         ([], [])
     )
+
 
 async def read_file(path):
     async with path.open('rb') as fp:

@@ -35,12 +35,9 @@ def main(args=None):
         help="Log loudness"
     )
     args = parser.parse_args(args=args)
-
     levels = [logging.WARNING, logging.INFO, logging.DEBUG]
     level = levels[min(args.verbose, 2)]
-
     config = load(args.config)
-
     app = init(config)
     logging.basicConfig(level=level)
     web.run_app(app, host=args.host, port=args.port)

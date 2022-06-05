@@ -23,6 +23,7 @@ class Config:
 
 config_schema = class_schema(Config)()
 
+
 def load(path):
     path = Path(path)
     data = tomlloads(path.read_text())

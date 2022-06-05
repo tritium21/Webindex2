@@ -160,7 +160,6 @@ class Filesystem:
         accel = accel if accel is not None else ''
         self.mounts.append(Mount(mount, root, accel))
 
-
     async def navigate(self, path):
         parts = AsyncPurePosixPath(path.strip('/')).parts
         if not parts:

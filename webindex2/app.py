@@ -17,6 +17,7 @@ def url_rewriter(env, prefix=None):
     env.globals['url'] = _url_for
     return _url_for
 
+
 def route_rewriter(routes, prefix=None):
     if prefix is None:
         return routes
@@ -36,6 +37,7 @@ def route_rewriter(routes, prefix=None):
                 kwargs=item.kwargs,
             ))
     return newroutes
+
 
 def init(config):
     app = web.Application()
