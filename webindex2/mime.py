@@ -1,5 +1,5 @@
-import os
 import mimetypes
+import os
 
 local_mime = mimetypes.MimeTypes()
 
