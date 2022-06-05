@@ -2,7 +2,6 @@ import argparse
 import logging
 import os
 import sys
-from tabnanny import verbose
 
 from aiohttp import web
 
