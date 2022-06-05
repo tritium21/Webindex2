@@ -160,12 +160,6 @@ class Filesystem:
         accel = accel if accel is not None else ''
         self.mounts.append(Mount(mount, root, accel))
 
-    @classmethod
-    def from_spec(cls, spec):
-        if not spec:
-            return cls()
-        return cls([Mount(*(l.strip().split('|')[:3])) for l in spec.splitlines()])
-
 
     async def navigate(self, path):
         parts = AsyncPurePosixPath(path.strip('/')).parts
