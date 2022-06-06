@@ -1,4 +1,4 @@
-﻿{%- macro icon(name) -%}
+﻿{%- macro icon(name, title='') -%}
 {% set _map = {
     "home": "we-home",
     "directory": "we-folder-open",
@@ -10,10 +10,10 @@
     "video": "we-file-video",
     "application": "we-file-empty",
     "info": "we-info",
-} %}<span class="{{ _map.get(name, "we-file-empty") }}"></span>{%- endmacro -%}
+} %}<span class="{{ _map.get(name, 'we-file-empty') }}"{% if title %} title="{{ title }}"{% endif %}></span>{%- endmacro -%}
 
 {%- macro navigate(path) -%}{% set view = 'listing' if path.is_dir else 'download' %}{{ url(view, path=path.url) }}{%- endmacro -%}
 {%- macro download(path) -%}{% set view = 'download-zip' if path.is_dir else 'download' %}{{ url(view, path=path.url) }}{%- endmacro -%}
 
 {% macro size(path) %}{% if path.is_dir %}--{% else %}{{ path.size|humanize_naturalsize() }}{% endif %}{% endmacro %}
-{% macro download_icon(path) %}{% if path.is_dir %}{{ icon("zip") }}{% else %}{{ icon("download") }}{% endif %}{% endmacro %}
+{% macro download_icon(path) %}{% if path.is_dir %}{{ icon("zip", title="Download zipfile") }}{% else %}{{ icon("download", title="Download file") }}{% endif %}{% endmacro %}

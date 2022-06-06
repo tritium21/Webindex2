@@ -2,12 +2,18 @@
 {% from 'macros.html' import icon, navigate, size, download_icon, download with context %}
 {% block title%}Directory Listing :: {{ cwd }}{% endblock %}
 {% block content %}
-<ol class="breadcrumb">
-    {% for path in crumbs %}
-    <li class="breadcrumb-item {% if loop.last %}active{% endif %}"><a href="{{ navigate(path) }}">{% if path.name %}{{ path.name }}{% else %}{{ icon("home") }} {% if global_title %}{{ global_title }}{% endif %}{% endif %}</a></li>
-    {% endfor %}
-</ol>
-<table class="table table-striped table-hover table-responsive">
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        {% for path in crumbs %}
+        {% if loop.last %}
+        <li class="breadcrumb-item active" aria-current="page"><a>{% if path.name %}{{ path.name }}{% else %}{{ icon("home") }} {% if global_title %}{{ global_title }}{% endif %}{% endif %}</a></li>
+        {% else %}
+        <li class="breadcrumb-item"><a href="{{ navigate(path) }}">{% if path.name %}{{ path.name }}{% else %}{{ icon("home") }} {% if global_title %}{{ global_title }}{% endif %}{% endif %}</a></li>
+        {% endif %}
+        {% endfor %}
+    </ol>
+</nav>
+<table class="table table-striped table-hover table-sm">
     <thead>
         <tr>
             <th class="col-sm-8">Name</th>
@@ -30,5 +36,5 @@
         </tr>
         {% endfor %}
     </tbody>
-</table>
+</div>
 {%- endblock %}
