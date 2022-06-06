@@ -2,7 +2,6 @@ from dataclasses import field, dataclass
 from pathlib import Path
 from typing import List, Optional
 
-from aiopath import AsyncPath
 from marshmallow_dataclass import class_schema
 from tomlkit import loads as tomlloads
 
