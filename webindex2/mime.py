@@ -25,22 +25,13 @@ for typ in TYPES:
 guess_type = local_mime.guess_type
 
 INLINE_TYPES = set([
+    'text/plain',
     'image/apng',
     'image/avif',
     'image/gif',
     'image/jpeg',
     'image/png',
     'image/svg+xml',
-    'image/webp',
-    'audio/mpeg',
-    'audio/mp4',
-    'video/mpeg',
-    'video/mp4',
-    'audio/ogg',
-    'video/ogg',
-    'audio/webm',
-    'video/webm',
-    'video/x-matroska',
     'application/pdf'
 ])
 
