@@ -53,6 +53,3 @@ def init(config):
     app['fs'] = fs
     app.add_routes(route_rewriter(routes, prefix=config.route_prefix))
     return app
-
-if __name__ == '__main__':
-    web.run_app(init())
