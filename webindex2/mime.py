@@ -41,6 +41,7 @@ INLINE_TYPES = set([
     'audio/webm',
     'video/webm',
     'video/x-matroska',
+    'pdf/pdf'
 ])
 
 def inline_type(mime):
