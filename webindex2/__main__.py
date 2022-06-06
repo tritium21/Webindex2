@@ -11,6 +11,7 @@ from .config import load
 def main(args=None):
     CONF_PATH = os.environ.get('WEBINDEX_CONF', 'config.toml')
     parser = argparse.ArgumentParser(
+        prog=f"{ sys.executable} -m {__package__}",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
