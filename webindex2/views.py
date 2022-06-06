@@ -6,6 +6,7 @@ from aiohttp_jinja2 import template
 from async_timeout import timeout
 from natsort import os_sorted
 
+from .mime import inline_type
 from .utils import partition, read_file
 from .zipstream import zipstream
 
@@ -51,7 +52,8 @@ async def download(request):
     accelflag = plo.x_accel_redirect_url != ''
     response = web.StreamResponse()
     response.headers['Content-Type'] = plo.mimetype
-    response.headers['Content-Disposition'] = f'attachment; filename="{plo.name}"'
+    if not inline_type(plo.mimetype):
+        response.headers['Content-Disposition'] = f'attachment; filename="{plo.name}"'
     if accelflag:
         response.headers['X-Accel-Redirect'] = str(plo.x_accel_redirect_url)
     await response.prepare(request)
