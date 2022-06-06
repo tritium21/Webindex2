@@ -15,7 +15,7 @@ TYPES = [
     ('application/x-cbr', '.cbr'),
     ('application/x-cbr', '.cbz'),
     ('audio/x-ms-wma', '.wma'),
-    ('pdf/pdf', '.pdf'),
+    ('application/pdf', '.pdf'),
     ('video/x-matroska', '.mkv'),
 ]
 
@@ -41,7 +41,7 @@ INLINE_TYPES = set([
     'audio/webm',
     'video/webm',
     'video/x-matroska',
-    'pdf/pdf'
+    'application/pdf'
 ])
 
 def inline_type(mime):
