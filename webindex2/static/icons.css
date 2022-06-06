@@ -1,18 +1,19 @@
 @font-face {
   font-family: 'webindex-font';
-  src:  url('fonts/webindex-font.eot?acucks');
-  src:  url('fonts/webindex-font.eot?acucks#iefix') format('embedded-opentype'),
-    url('fonts/webindex-font.ttf?acucks') format('truetype'),
-    url('fonts/webindex-font.woff?acucks') format('woff'),
-    url('fonts/webindex-font.svg?acucks#webindex-font') format('svg');
+  src:  url('fonts/webindex-font.eot?h5pycs');
+  src:  url('fonts/webindex-font.eot?h5pycs#iefix') format('embedded-opentype'),
+    url('fonts/webindex-font.ttf?h5pycs') format('truetype'),
+    url('fonts/webindex-font.woff?h5pycs') format('woff'),
+    url('fonts/webindex-font.svg?h5pycs#webindex-font') format('svg');
   font-weight: normal;
   font-style: normal;
+  font-display: block;
 }
 
 [class^="we-"], [class*=" we-"] {
   /* use !important to prevent issues with browser extensions that change fonts */
   font-family: 'webindex-font' !important;
-  speak: none;
+  speak: never;
   font-style: normal;
   font-weight: normal;
   font-variant: normal;
@@ -51,10 +52,6 @@
 .we-download:before {
   content: "\e960";
 }
-.we-eye:before {
-  content: "\e9ce";
+.we-info:before {
+  content: "\ea0c";
 }
-.we-file-pdf:before {
-  content: "\eadf";
-}
-
