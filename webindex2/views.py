@@ -29,6 +29,9 @@ async def index(request):
         plo = await request.app['fs'].navigate(request.match_info.get('path', ''))
     except FileNotFoundError:
         raise web.HTTPNotFound
+    if not plo.is_dir:
+        location = request.app.router['download'].url_for(path=plo.url)
+        raise web.HTTPFound(location=location)
     paths = [x async for x in plo.iterdir()]
     dirs, files = partition(paths, lambda p: p.is_dir)
     dirs = os_sorted(dirs, key=lambda x: x.name)

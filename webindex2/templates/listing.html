@@ -1,10 +1,10 @@
 ﻿{% extends "layout.html" %}
 {% from 'macros.html' import icon, navigate, size, fetch_icon, download with context %}
-{% block title%}Directory Listing: {{ cwd }}{% endblock %}
+{% block title%}Directory Listing :: {{ cwd }}{% endblock %}
 {% block content %}
 <ol class="breadcrumb">
     {% for path in crumbs %}
-    <li class="breadcrumb-item {% if loop.last %}active{% endif %}"><a href="{{ navigate(path) }}">{% if path.name %}{{ path.name }}{% else %}{{ icon("home") }}{% endif %}</a></li>
+    <li class="breadcrumb-item {% if loop.last %}active{% endif %}"><a href="{{ navigate(path) }}">{% if path.name %}{{ path.name }}{% else %}{{ icon("home") }} {% if global_title %}{{ global_title }}{% endif %}{% endif %}</a></li>
     {% endfor %}
 </ol>
 <table class="table table-striped table-hover table-responsive">
