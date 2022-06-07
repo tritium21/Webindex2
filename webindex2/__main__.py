@@ -40,7 +40,6 @@ def main(args=None):
     )
     parser.add_argument(
         '-U', '--path',
-        type=int, default=8080,
         help="Unix Socket to listen on"
     )
     parser.add_argument(
