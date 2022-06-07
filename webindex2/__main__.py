@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+import pathlib
 import sys
 
 from aiohttp import web
@@ -8,39 +9,43 @@ from aiohttp import web
 from .app import init
 from .config import load
 
+
 def main(args=None):
     CONF_PATH = os.environ.get('WEBINDEX_CONF', 'config.toml')
     parser = argparse.ArgumentParser(
-        prog=f"{ sys.executable} -m {__package__}",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        prog=f"{__package__}",
+        formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=52),
     )
     parser.add_argument(
-        '--host', '-H',
+        '-v', '--verbose',
+        action='count', default=0,
+        help="Log loudness"
+    )
+    parser.add_argument(
+        '-H', '--host',
         default='localhost',
         help="Host to listen on",
     )
     parser.add_argument(
-        '--port', '-P',
+        '-P', '--port',
         type=int, default=8080,
         help="Port to listen on"
     )
     parser.add_argument(
-        '--config', '-c',
-        default=CONF_PATH,
+        '-c', '--config',
+        type=pathlib.Path,
+        default=pathlib.Path(CONF_PATH).resolve(),
+        metavar='PATH',
         help="Path to config file"
-    )
-    parser.add_argument(
-        '--verbose', '-v',
-        action='count', default=0,
-        help="Log loudness"
     )
     args = parser.parse_args(args=args)
     levels = [logging.WARNING, logging.INFO, logging.DEBUG]
     level = levels[min(args.verbose, 2)]
-    config = load(args.config)
+    config = load(pathlib.Path(args.config).resolve())
     app = init(config)
     logging.basicConfig(level=level)
     web.run_app(app, host=args.host, port=args.port)
+
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))
