@@ -6,7 +6,7 @@ import sys
 
 try:
     import asyncio
-    import uvloop
+    import uvloop  # type: ignore
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 except ImportError:
     pass
