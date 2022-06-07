@@ -30,12 +30,11 @@ def main(args=None):
     )
     parser.add_argument(
         '-H', '--host',
-        default='localhost',
         help="Host to listen on",
     )
     parser.add_argument(
         '-P', '--port',
-        type=int, default=8080,
+        type=int,
         help="Port to listen on"
     )
     parser.add_argument(
