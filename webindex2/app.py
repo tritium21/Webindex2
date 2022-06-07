@@ -46,6 +46,8 @@ def init(config):
         app,
         loader=PackageLoader('webindex2'),
         extensions=["jinja2_humanize_extension.HumanizeExtension"],
+        trim_blocks=True,
+        lstrip_blocks=True,
     )
     env.globals['global_title'] = config.name
     url_rewriter(env, prefix=config.url_prefix)
