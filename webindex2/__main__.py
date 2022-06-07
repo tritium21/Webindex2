@@ -39,6 +39,11 @@ def main(args=None):
         help="Port to listen on"
     )
     parser.add_argument(
+        '-U', '--path',
+        type=int, default=8080,
+        help="Unix Socket to listen on"
+    )
+    parser.add_argument(
         '-c', '--config',
         type=pathlib.Path,
         default=pathlib.Path(CONF_PATH).resolve(),
@@ -51,7 +56,7 @@ def main(args=None):
     config = load(pathlib.Path(args.config).resolve())
     app = init(config)
     logging.basicConfig(level=level)
-    web.run_app(app, host=args.host, port=args.port)
+    web.run_app(app, host=args.host, port=args.port, path=args.path)
 
 
 if __name__ == '__main__':
