@@ -57,8 +57,8 @@ def main(args=None):
     config = load(pathlib.Path(args.config).resolve())
     app = init(config)
     logging.basicConfig(level=level)
-    if args.path:
-        web.run_app(app, path=args.path)
+    if args.unix:
+        web.run_app(app, path=args.unix)
     else:
         web.run_app(app, host=args.host, port=args.port)
 
