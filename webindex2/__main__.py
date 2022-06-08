@@ -21,7 +21,7 @@ def main(args=None):
     CONF_PATH = os.environ.get('WEBINDEX_CONF', 'config.toml')
     parser = argparse.ArgumentParser(
         prog=f"{__package__}",
-        formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=52),
+        formatter_class=lambda prog: argparse.ArgumentDefaultsHelpFormatter(prog,max_help_position=52),
     )
     parser.add_argument(
         '-v', '--verbose',
@@ -29,6 +29,11 @@ def main(args=None):
         help="Log loudness"
     )
     mag = parser.add_mutually_exclusive_group(required=True)
+    mag.add_argument(
+        '-U', '--unix',
+        metavar='PATH',
+        help="Unix Socket to listen on"
+    )
     mag.add_argument(
         '-H', '--host',
         default='localhost',
@@ -38,11 +43,6 @@ def main(args=None):
         '-P', '--port',
         type=int, default=8080,
         help="Port to listen on"
-    )
-    mag.add_argument(
-        '-U', '--unix',
-        metavar='PATH',
-        help="Unix Socket to listen on"
     )
     parser.add_argument(
         '-c', '--config',
