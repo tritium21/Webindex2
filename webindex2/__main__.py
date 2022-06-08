@@ -28,18 +28,20 @@ def main(args=None):
         action='count', default=0,
         help="Log loudness"
     )
-    parser.add_argument(
+    mag = parser.add_mutually_exclusive_group(required=True)
+    mag.add_argument(
         '-H', '--host',
         help="Host to listen on",
+    )
+
+    mag.add_argument(
+        '-U', '--path',
+        help="Unix Socket to listen on"
     )
     parser.add_argument(
         '-P', '--port',
         type=int,
         help="Port to listen on"
-    )
-    parser.add_argument(
-        '-U', '--path',
-        help="Unix Socket to listen on"
     )
     parser.add_argument(
         '-c', '--config',
@@ -54,7 +56,10 @@ def main(args=None):
     config = load(pathlib.Path(args.config).resolve())
     app = init(config)
     logging.basicConfig(level=level)
-    web.run_app(app, host=args.host, port=args.port, path=args.path)
+    if args.path:
+        web.run_app(app, path=args.path)
+    else:
+        web.run_app(app, host=args.host, port=args.port)
 
 
 if __name__ == '__main__':
