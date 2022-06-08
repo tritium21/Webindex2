@@ -31,17 +31,18 @@ def main(args=None):
     mag = parser.add_mutually_exclusive_group(required=True)
     mag.add_argument(
         '-H', '--host',
+        default='localhost',
         help="Host to listen on",
-    )
-
-    mag.add_argument(
-        '-U', '--path',
-        help="Unix Socket to listen on"
     )
     parser.add_argument(
         '-P', '--port',
-        type=int,
+        type=int, default=8080,
         help="Port to listen on"
+    )
+    mag.add_argument(
+        '-U', '--unix',
+        metavar='PATH',
+        help="Unix Socket to listen on"
     )
     parser.add_argument(
         '-c', '--config',
